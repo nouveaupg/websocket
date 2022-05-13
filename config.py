@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 from logging.config import dictConfig
+from redis import Redis
 import logging
+
+REDIS_HOST = "127.0.0.1"
+REDIS_PORT = 6379
+
+def connect_to_redis():
+    return Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
 class LogConfig(BaseModel):
     """Logging configuration to be set for the server"""

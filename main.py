@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from uuid import uuid4
 from connection_manager import ConnectionManager
+from listener_thread import ListenerThread
 import uvicorn
 
 app = FastAPI()
@@ -8,6 +9,8 @@ app = FastAPI()
 ws_server_id = str(uuid4())
 
 manager = ConnectionManager(ws_server_id)
+listener = ListenerThread(manager, ws_server_id)
+listener.start()
 
 @app.websocket('/ws/{client_uuid}')
 async def websocket_endpoint(websocket: WebSocket, client_uuid: str):

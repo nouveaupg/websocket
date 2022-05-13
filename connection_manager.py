@@ -1,15 +1,19 @@
 from fastapi import WebSocket
+from redis import Redis
+import json
 
-from log_config import logger
+from config import logger, connect_to_redis
 
 class ConnectionManager:
     def __init__(self, ws_server_id):
         logger.info("websocket_server_id: %s", ws_server_id)
         self._ws_server_id = ws_server_id
         self._active_connections = {}
+        self._redis = connect_to_redis()
 
     async def connect(self, websocket: WebSocket, client_id: str):
         await websocket.accept()
+        self._redis.set(client_id, self._ws_server_id)
         self._active_connections[client_id] = websocket 
         logger.info("Client connected: %s (server: %s)", client_id, self._ws_server_id)
 
@@ -34,6 +38,9 @@ class ConnectionManager:
         if client_id in self._active_connections:
             websocket = self._active_connections[client_id]
             await websocket.send_json(object)
-            logger.debug("Message sent to client %s (server: %s)", client_id, self._ws_server_id)
+            logger.debug("Message sent to local client %s (server: %s)", client_id, self._ws_server_id)
         else:
-            logger.info("Client %s not found on this server (server: %s)", client_id, self._ws_server_id)
+            server_id = self._redis.get(client_id)
+            self._redis.rpush(server_id, json.dumps(object))
+            logger.debug("Client %s not found on this server (server: %s)", client_id, self._ws_server_id)
+            logger.debug("Message posted to Redis queue: " + server_id)
