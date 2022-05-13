@@ -1,5 +1,4 @@
 from fastapi import WebSocket
-from redis import Redis
 import json
 
 from config import logger, connect_to_redis
